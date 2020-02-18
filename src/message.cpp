@@ -24,11 +24,11 @@ message::message(const unsigned char* byte_array)
 {
     // Deserialize the message from the byte array.
     // Read the ID.
-    message::m_id = qFromBigEndian(*reinterpret_cast<const unsigned short*>(&byte_array[0]));
+    message::m_id = qFromBigEndian<unsigned short>(*reinterpret_cast<const unsigned short*>(&byte_array[0]));
     // Read the priority.
     message::m_priority = byte_array[2];
     // Read the data length.
-    message::m_data_length = qFromBigEndian(*reinterpret_cast<const unsigned short*>(&byte_array[3]));
+    message::m_data_length = qFromBigEndian<unsigned short>(*reinterpret_cast<const unsigned short*>(&byte_array[3]));
     // Read the data.
     message::m_data = new unsigned char[message::m_data_length];
     std::memcpy(message::m_data, &byte_array[5], message::m_data_length);
@@ -70,19 +70,19 @@ void message::set_field(unsigned short address, unsigned int size, void *data)
     }
     case 2:
     {
-        unsigned short value = qToBigEndian(*static_cast<unsigned short*>(data));
+        unsigned short value = qToBigEndian<unsigned short>(*static_cast<unsigned short*>(data));
         std::memcpy(&message::m_data[address], & value, 2);
         break;
     }
     case 4:
     {
-        unsigned int value = qToBigEndian(*static_cast<unsigned int*>(data));
+        unsigned int value = qToBigEndian<unsigned int>(*static_cast<unsigned int*>(data));
         std::memcpy(&message::m_data[address], & value, 4);
         break;
     }
     case 8:
     {
-        unsigned long value = qToBigEndian(*static_cast<unsigned long*>(data));
+        unsigned long long value = qToBigEndian<unsigned long long>(*static_cast<unsigned long long*>(data));
         std::memcpy(&message::m_data[address], & value, 8);
         break;
     }
@@ -118,19 +118,19 @@ void message::get_field(unsigned short address, unsigned int size, void *data) c
     }
     case 2:
     {
-        unsigned short value = qFromBigEndian(*reinterpret_cast<unsigned short*>(&message::m_data[address]));
+        unsigned short value = qFromBigEndian<unsigned short>(*reinterpret_cast<unsigned short*>(&message::m_data[address]));
         std::memcpy(data, &value, 2);
         break;
     }
     case 4:
     {
-        unsigned int value = qFromBigEndian(*reinterpret_cast<unsigned int*>(&message::m_data[address]));
+        unsigned int value = qFromBigEndian<unsigned int>(*reinterpret_cast<unsigned int*>(&message::m_data[address]));
         std::memcpy(data, &value, 4);
         break;
     }
     case 8:
     {
-        unsigned long value = qFromBigEndian(*reinterpret_cast<unsigned long*>(&message::m_data[address]));
+        unsigned long long value = qFromBigEndian<unsigned long long>(*reinterpret_cast<unsigned long long*>(&message::m_data[address]));
         std::memcpy(data, &value, 8);
         break;
     }
@@ -140,12 +140,12 @@ void message::get_field(unsigned short address, unsigned int size, void *data) c
 void message::serialize(unsigned char *byte_array) const
 {
     // Serialize the ID first.
-    unsigned short be_id = qToBigEndian(message::m_id);
+    unsigned short be_id = qToBigEndian<unsigned short>(message::m_id);
     std::memcpy(&byte_array[0], &be_id, 2);
     // Serialize priority.
     byte_array[2] = message::m_priority;
     // Serialize data length.
-    unsigned short be_data_length = qToBigEndian(message::m_data_length);
+    unsigned short be_data_length = qToBigEndian<unsigned short>(message::m_data_length);
     std::memcpy(&byte_array[3], &be_data_length, 2);
     // Copy in data, as it is already guaranteed big endian.
     std::memcpy(&byte_array[5], message::m_data, message::m_data_length);

@@ -345,7 +345,7 @@ void communicator::spin_rx()
     }
 
     // Extract the data length from the end of packet_front.
-    unsigned short data_length = qFromBigEndian(*reinterpret_cast<unsigned short*>(&packet_front[9]));
+    unsigned short data_length = qFromBigEndian<unsigned short>(*reinterpret_cast<unsigned short*>(&packet_front[9]));
 
     // Form the final packet array.
     unsigned int packet_length = 11 + data_length + 1;
@@ -364,7 +364,7 @@ void communicator::spin_rx()
     // Validate the checksum.
     bool checksum_ok = packet[packet_length-1] == communicator::checksum(packet, packet_length-1);
     // Extract sequence number from the packet.
-    unsigned int sequence_number = qFromBigEndian(*reinterpret_cast<unsigned int*>(&packet[1]));
+    unsigned int sequence_number = qFromBigEndian<unsigned int>(*reinterpret_cast<unsigned int*>(&packet[1]));
 
     // Handle receipts
     switch(static_cast<communicator::receipt_type>(packet[5]))
@@ -491,7 +491,7 @@ void communicator::tx(utility::outbound* message)
     unsigned char* packet = new unsigned char[packet_size];
     // Write the header, sequence, and receipt.
     packet[0] = communicator::m_header_byte;
-    unsigned int be_sequence = qToBigEndian(message->p_sequence_number());
+    unsigned int be_sequence = qToBigEndian<unsigned int>(message->p_sequence_number());
     std::memcpy(&packet[1], &be_sequence, 4);
     packet[5] = message->p_receipt_required();
     // Write the message bytes.
