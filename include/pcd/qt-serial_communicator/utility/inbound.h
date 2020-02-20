@@ -23,7 +23,7 @@ public:
     /// \param sequence_number The originating sequence number of the received message.
     /// \details This instance takes ownership of the message pointer.
     ///
-    inbound(message* message, unsigned int sequence_number);
+    inbound(message* message, uint32_t sequence_number);
 
     // PROPERTIES
     ///
@@ -45,7 +45,7 @@ private:
     ///
     /// \brief m_sequence_number Stores the originating sequence number of the received message.
     ///
-    unsigned int m_sequence_number;
+    uint32_t m_sequence_number;
 };
 
 }}

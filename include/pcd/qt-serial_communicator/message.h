@@ -3,6 +3,8 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#include <cstdint>
+
 namespace serial_communicator {
 ///
 /// \brief Represents a message that can be sent or recieved through the Serial Communicator.
