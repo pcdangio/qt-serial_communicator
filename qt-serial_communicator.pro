@@ -19,17 +19,15 @@ HEADERS += \
     include/pcd/qt-serial_communicator/utility/inbound.h \
     include/pcd/qt-serial_communicator/utility/outbound.h
 
-unix
-{
+unix{
     target.path = /usr/local/lib
     headers.path = /usr/local/include
-    headers.files = include/*
-    INSTALLS += target headers
 }
-win32
-{
+win32{
     target.path = $$(APPDATA)\pcd
     headers.path = $$(APPDATA)\pcd\include
-    headers.files = include/*
-    INSTALLS += target headers
+
 }
+
+headers.files = include/*
+INSTALLS += target headers

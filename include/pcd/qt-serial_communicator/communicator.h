@@ -47,14 +47,14 @@ public:
     /// \brief messages_available Gets the total number of messages available to read from the receive queue.
     /// \return The number of available messages to read.
     ///
-    unsigned short messages_available() const;
+    uint16_t messages_available() const;
     ///
     /// \brief receive Grabs a message from the receive queue.
     /// \param id OPTIONAL The ID of the message to read. Defaults to 0xFFFF, which will grab the next available message.
     /// \return A pointer to the received message. The calling code takes ownership of the message pointer.
     /// \details Messages are always returned by highest priority, followed by oldest in age.
     ///
-    message* receive(unsigned short id = 0xFFFF);
+    message* receive(uint16_t id = 0xFFFF);
     ///
     /// \brief spin Performs a single spin of the communicator's internal duties.
     /// \note This should be called at a constant rate within the main loop of external code.
@@ -72,7 +72,7 @@ public:
     /// messages to be enqueued until space opens up from a spin() call.  These queue sizes ensure that
     /// the system's memory does not fill up.
     ///
-    unsigned short p_queue_size();
+    uint16_t p_queue_size();
     ///
     /// \brief p_queue_size Sets the size of the transmit and receive buffers, in number of messages.
     /// \param value The size of the transmit and receive buffers, in number of messages.
@@ -81,7 +81,7 @@ public:
     /// messages to be enqueued until space opens up from a spin() call.  These queue sizes ensure that
     /// the system's memory does not fill up.
     ///
-    void p_queue_size(unsigned short value);
+    void p_queue_size(uint16_t value);
     ///
     /// \brief p_receipt_timeout Gets the receipt timeout in milliseconds.
     /// \return The receipt timeout in milliseconds.
@@ -92,7 +92,7 @@ public:
     /// received or the maximum number of transmissions has been reached.
     /// \note The default value is 100ms.
     ///
-    unsigned int p_receipt_timeout();
+    uint32_t p_receipt_timeout();
     ///
     /// \brief p_receipt_timeout Sets the receipt timeout in milliseconds.
     /// \param value The receipt timeout in milliseconds.
@@ -103,7 +103,7 @@ public:
     /// received or the maximum number of transmissions has been reached.
     /// \note The default value is 100ms.
     ///
-    void p_receipt_timeout(unsigned int value);
+    void p_receipt_timeout(uint32_t value);
     ///
     /// \brief p_max_transmissions Gets the maximum number of times a message may be transmitted.
     /// \return The maximum number of times a message may be transmitted.
@@ -114,7 +114,7 @@ public:
     /// status will be set to NOTRECEIVED.
     /// \note The default value is 5 transmissions.
     ///
-    unsigned char p_max_transmissions();
+    uint8_t p_max_transmissions();
     ///
     /// \brief p_max_transmissions Gets the maximum number of times a message may be transmitted.
     /// \param value The maximum number of times a message may be transmitted.
@@ -125,7 +125,7 @@ public:
     /// status will be set to NOTRECEIVED.
     /// \note The default value is 5 transmissions.
     ///
-    void p_max_transmissions(unsigned char value);
+    void p_max_transmissions(uint8_t value);
 
 private:
     // ENUMERATIONS
@@ -144,25 +144,25 @@ private:
     ///
     /// \brief m_header_byte Stores the message header byte.
     ///
-    const unsigned char m_header_byte = 0xAA;
+    const uint8_t m_header_byte = 0xAA;
     ///
     /// \brief m_escape_byte Stores the message escape byte.
     ///
-    const unsigned char m_escape_byte = 0x1B;
+    const uint8_t m_escape_byte = 0x1B;
 
     // PARAMETERS
     ///
     /// \brief m_queue_size Stores the size of the transmit/receive queues, in messages.
     ///
-    unsigned short m_queue_size;
+    uint16_t m_queue_size;
     ///
     /// \brief m_receipt_timeout Stores the receipt timeout in milliseconds.
     ///
-    unsigned int m_receipt_timeout;
+    uint32_t m_receipt_timeout;
     ///
     /// \brief m_max_transmissions Stores the maximum amount of transmissions for one message.
     ///
-    unsigned char m_max_transmissions;
+    uint8_t m_max_transmissions;
 
     // VARIABLES
     ///
@@ -172,7 +172,7 @@ private:
     ///
     /// \brief m_sequence_counter Stores the current sequence number for assigning unique and monotonic sequence IDs to messages.
     ///
-    unsigned int m_sequence_counter;
+    uint32_t m_sequence_counter;
 
     // QUEUES
     ///
@@ -203,7 +203,7 @@ private:
     /// \param buffer The buffer of unescaped packet bytes to escape and send.
     /// \param length The length of the unescaped packet buffer.
     ///
-    void tx(unsigned char* buffer, unsigned int length);
+    void tx(uint8_t* buffer, uint32_t length);
     ///
     /// \brief rx Reads a specified amount of bytes from the serial buffer.
     /// \param buffer The pre-allocated buffer to store read bytes in.
@@ -211,14 +211,14 @@ private:
     /// \return TRUE if length bytes was read successfully, otherwise FALSE (a.k.a. timeout)
     /// \details This method will read bytes from the buffer and correct for escape bytes.
     ///
-    bool rx(unsigned char* buffer, unsigned int length);
+    bool rx(uint8_t* buffer, uint32_t length);
     ///
     /// \brief checksum Calculates the XOR checksum of the provided data array.
     /// \param data The data to calculate the checksum for.
     /// \param length The length of the data array.
     /// \return The XOR checksum of the data.
     ///
-    unsigned char checksum(unsigned char* data, unsigned int length);
+    uint8_t checksum(uint8_t* data, uint32_t length);
     ///
     /// \brief serial_read Conducts a read operation on the serial port.
     /// \param buffer The buffer to read the data into.
@@ -226,7 +226,7 @@ private:
     /// \param timeout_ms The timeout for the read operation, in milliseconds.
     /// \return The number of bytes actually read into the buffer.
     ///
-    unsigned long serial_read(unsigned char* buffer, unsigned int length, unsigned int timeout_ms = 30);
+    uint64_t serial_read(uint8_t* buffer, uint32_t length, uint32_t timeout_ms = 30);
 };
 }
 

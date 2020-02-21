@@ -3,7 +3,7 @@
 using namespace serial_communicator;
 using namespace serial_communicator::utility;
 
-outbound::outbound(message* message, unsigned int sequence_number, bool receipt_required, message_status* tracker)
+outbound::outbound(message* message, uint32_t sequence_number, bool receipt_required, message_status* tracker)
 {
     // Store locals.
     outbound::m_message = message;
@@ -41,12 +41,12 @@ void outbound::update_status(message_status status)
         *outbound::m_tracker = status;
     }
 }
-bool outbound::timeout_elapsed(unsigned int timeout) const
+bool outbound::timeout_elapsed(uint32_t timeout) const
 {
     // Check if the given timeout has been elapsed.
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - outbound::m_transmit_timestamp).count() > timeout;
 }
-bool outbound::can_retransmit(unsigned char transmit_limit) const
+bool outbound::can_retransmit(uint8_t transmit_limit) const
 {
     return outbound::m_n_transmissions < transmit_limit;
 }
@@ -56,7 +56,7 @@ const message* outbound::p_message() const
 {
     return outbound::m_message;
 }
-unsigned int outbound::p_sequence_number() const
+uint32_t outbound::p_sequence_number() const
 {
     return outbound::m_sequence_number;
 }
@@ -64,7 +64,7 @@ bool outbound::p_receipt_required() const
 {
     return outbound::m_receipt_required;
 }
-unsigned char outbound::p_n_transmissions() const
+uint8_t outbound::p_n_transmissions() const
 {
     return outbound::m_n_transmissions;
 }

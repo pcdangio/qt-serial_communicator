@@ -24,7 +24,7 @@ public:
     /// \param receipt_required A flag indicating if receipt is required for the outbound message.
     /// \param tracker A tracker for external observation of an outgoing message's status.
     ///
-    outbound(message* message, unsigned int sequence_number, bool receipt_required, message_status* tracker);
+    outbound(message* message, uint32_t sequence_number, bool receipt_required, message_status* tracker);
     ~outbound();
 
     // METHODS
@@ -44,13 +44,13 @@ public:
     /// \param timeout The length of the timeout period in milliseconds.
     /// \return TRUE if the timeout has elapsed, otherwise FALSE.
     ///
-    bool timeout_elapsed(unsigned int timeout) const;
+    bool timeout_elapsed(uint32_t timeout) const;
     ///
     /// \brief can_retransmit Checks if the message can be retransmitted, or if it has reached its max transmissions.
     /// \param transmit_limit The maximum allowed transmissions of the message.
     /// \return TRUE if the message may be retransmitted, otherwise FALSE.
     ///
-    bool can_retransmit(unsigned char transmit_limit) const;
+    bool can_retransmit(uint8_t transmit_limit) const;
 
     // PROPERTIES
     ///
@@ -62,7 +62,7 @@ public:
     /// \brief p_sequence_number Gets the originating sequence number of the outbound message.
     /// \return The originating sequence number of the outbound message.
     ///
-    unsigned int p_sequence_number() const;
+    uint32_t p_sequence_number() const;
     ///
     /// \brief p_receipt_required Gets if the message is requiring a receipt from the receiver or not.
     /// \return TRUE if receipt is required, otherwise FALSE.
@@ -88,7 +88,7 @@ private:
     ///
     /// \brief m_sequence_number Stores the originating sequence number of the outgoing message.
     ///
-    unsigned int m_sequence_number;
+    uint32_t m_sequence_number;
     ///
     /// \brief m_receipt_required Stores the flag indicating if receipt is required for the outgoing message.
     ///
@@ -108,7 +108,7 @@ private:
     ///
     /// \brief m_n_transmissions Stores the total number of times the message has been transmitted.
     ///
-    unsigned char m_n_transmissions;
+    uint8_t m_n_transmissions;
 };
 }}
 

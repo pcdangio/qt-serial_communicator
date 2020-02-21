@@ -26,7 +26,7 @@ communicator::communicator(QSerialPort *serial_port)
     // Initialize queues.
     communicator::m_tx_queue = new utility::outbound*[communicator::m_queue_size];
     communicator::m_rx_queue = new utility::inbound*[communicator::m_queue_size];
-    for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+    for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
         communicator::m_tx_queue[i] = nullptr;
         communicator::m_rx_queue[i] = nullptr;
@@ -35,7 +35,7 @@ communicator::communicator(QSerialPort *serial_port)
 communicator::~communicator()
 {
     // Clean up queues.
-    for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+    for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
         if(communicator::m_tx_queue[i] != nullptr)
         {
@@ -54,7 +54,7 @@ communicator::~communicator()
 bool communicator::send(message* message, bool receipt_required, message_status* tracker)
 {
     // Find an open spot in the transmit queue.
-    for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+    for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
         if(communicator::m_tx_queue[i] == nullptr)
         {
@@ -69,11 +69,11 @@ bool communicator::send(message* message, bool receipt_required, message_status*
     delete message;
     return false;
 }
-unsigned short communicator::messages_available() const
+uint16_t communicator::messages_available() const
 {
     // Count and return total number of messages in receive queue.
-    unsigned short n_messages = 0;
-    for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+    uint16_t n_messages = 0;
+    for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
         if(communicator::m_rx_queue[i] != nullptr)
         {
@@ -82,13 +82,13 @@ unsigned short communicator::messages_available() const
     }
     return n_messages;
 }
-message* communicator::receive(unsigned short id)
+message* communicator::receive(uint16_t id)
 {
     // Find a message with the matching ID that has the highest priority, followed by oldest age.
     utility::inbound* to_read = nullptr;
-    unsigned short location = 0;
+    uint16_t location = 0;
 
-    for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+    for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
         // Check if there is a valid message at this location.
         if(communicator::m_rx_queue[i] != nullptr)
@@ -159,11 +159,11 @@ void communicator::spin()
 }
 
 // PUBLIC PROPERTIES
-unsigned short communicator::p_queue_size()
+uint16_t communicator::p_queue_size()
 {
     return communicator::m_queue_size;
 }
-void communicator::p_queue_size(unsigned short value)
+void communicator::p_queue_size(uint16_t value)
 {
     // Check if a resize is necessary.
     if(value != communicator::m_queue_size)
@@ -174,14 +174,14 @@ void communicator::p_queue_size(unsigned short value)
         utility::inbound** new_rx = new utility::inbound*[value];
 
         // Copy current queues into new queues.
-        for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+        for(uint16_t i = 0; i < communicator::m_queue_size; i++)
         {
             new_tx[i] = communicator::m_tx_queue[i];
             new_rx[i] = communicator::m_rx_queue[i];
         }
 
         // Fill any remaining space with nullptrs.
-        for(unsigned short i = communicator::m_queue_size; i < value; i++)
+        for(uint16_t i = communicator::m_queue_size; i < value; i++)
         {
             new_tx[i] = nullptr;
             new_rx[i] = nullptr;
@@ -197,19 +197,19 @@ void communicator::p_queue_size(unsigned short value)
         communicator::m_queue_size = value;
     }
 }
-unsigned int communicator::p_receipt_timeout()
+uint32_t communicator::p_receipt_timeout()
 {
     return communicator::m_receipt_timeout;
 }
-void communicator::p_receipt_timeout(unsigned int value)
+void communicator::p_receipt_timeout(uint32_t value)
 {
     communicator::m_receipt_timeout = value;
 }
-unsigned char communicator::p_max_transmissions()
+uint8_t communicator::p_max_transmissions()
 {
     return communicator::m_max_transmissions;
 }
-void communicator::p_max_transmissions(unsigned char value)
+void communicator::p_max_transmissions(uint8_t value)
 {
     communicator::m_max_transmissions = value;
 }
@@ -221,8 +221,8 @@ void communicator::spin_tx()
 
     // First, find the message with the highest priority or age.
     utility::outbound* to_send = nullptr;
-    unsigned short location = 0;
-    for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+    uint16_t location = 0;
+    for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
         // Check if this address has a valid outbound message in it.
         if(communicator::m_tx_queue[i] != nullptr)
@@ -321,10 +321,10 @@ void communicator::spin_rx()
 {
     // Read bytes until header byte is found or timed out.
     // Do this directly from the serial port since the header is not concerned with escape bytes.
-    unsigned char read_byte = 0;
+    uint8_t read_byte = 0;
     while(read_byte != communicator::m_header_byte)
     {
-        unsigned long n_read = communicator::serial_read(&read_byte, 1);
+        uint64_t n_read = communicator::serial_read(&read_byte, 1);
         if(n_read < 1)
         {
             // Timeout has occured, quit.
@@ -335,7 +335,7 @@ void communicator::spin_rx()
     // If this point reached, a valid header has been found.
     // Message data length is needed.  Read beginning of packet into temporary array to get to length.
     // 1 header, 4 sequence, 1 receipt, 2 message id, 1 priority, 2 data length. Read next 10 bytes.
-    unsigned char packet_front[11];
+    uint8_t packet_front[11];
     packet_front[0] = read_byte;
     // Use rx method for rest of reads to handle escape bytes.
     if(communicator::rx(&packet_front[1], 10) == false)
@@ -345,11 +345,11 @@ void communicator::spin_rx()
     }
 
     // Extract the data length from the end of packet_front.
-    unsigned short data_length = qFromBigEndian<unsigned short>(*reinterpret_cast<unsigned short*>(&packet_front[9]));
+    uint16_t data_length = qFromBigEndian(*reinterpret_cast<uint16_t*>(&packet_front[9]));
 
     // Form the final packet array.
-    unsigned int packet_length = 11 + data_length + 1;
-    unsigned char* packet = new unsigned char[packet_length];
+    uint32_t packet_length = 11 + data_length + 1;
+    uint8_t* packet = new uint8_t[packet_length];
     // Copy the front of the packet into the final packet.
     std::memcpy(packet, packet_front, 11);
     // Read the remaining bytes into the packet.
@@ -364,7 +364,7 @@ void communicator::spin_rx()
     // Validate the checksum.
     bool checksum_ok = packet[packet_length-1] == communicator::checksum(packet, packet_length-1);
     // Extract sequence number from the packet.
-    unsigned int sequence_number = qFromBigEndian<unsigned int>(*reinterpret_cast<unsigned int*>(&packet[1]));
+    uint32_t sequence_number = qFromBigEndian(*reinterpret_cast<uint32_t*>(&packet[1]));
 
     // Handle receipts
     switch(static_cast<communicator::receipt_type>(packet[5]))
@@ -378,17 +378,17 @@ void communicator::spin_rx()
     {
         // Draft and send a receipt message outside of the typical outbound/tx_queue.
         // Receipt messages do not need to be tracked.
-        unsigned char receipt[12];
+        uint8_t receipt[12];
         // Copy header(1), sequence(4), receipt(1), id(2), and priority(1) back into receipt.  Then add zero data length (2) and checksum (1).
         std::memcpy(receipt, packet, 9);
         // Update the receipt field.
         if(checksum_ok)
         {
-            receipt[5] = static_cast<unsigned char>(communicator::receipt_type::RECEIVED);
+            receipt[5] = static_cast<uint8_t>(communicator::receipt_type::RECEIVED);
         }
         else
         {
-            receipt[5] = static_cast<unsigned char>(communicator::receipt_type::CHECKSUM_MISMATCH);
+            receipt[5] = static_cast<uint8_t>(communicator::receipt_type::CHECKSUM_MISMATCH);
         }
         // No data fields.
         receipt[9] = 0;
@@ -404,7 +404,7 @@ void communicator::spin_rx()
         // If checksum is ok, remove the associated message from the TXQ if it is still in there.
         if(checksum_ok)
         {
-            for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+            for(uint16_t i = 0; i < communicator::m_queue_size; i++)
             {
                 if(communicator::m_tx_queue[i] != nullptr)
                 {
@@ -429,7 +429,7 @@ void communicator::spin_rx()
         // Find the associated message based on sequence number and immediately resend it.
         if(checksum_ok)
         {
-            for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+            for(uint16_t i = 0; i < communicator::m_queue_size; i++)
             {
                 if(communicator::m_tx_queue[i] != nullptr)
                 {
@@ -464,7 +464,7 @@ void communicator::spin_rx()
     if(checksum_ok)
     {
         // Find an open position in the RXQ.
-        for(unsigned short i = 0; i < communicator::m_queue_size; i++)
+        for(uint16_t i = 0; i < communicator::m_queue_size; i++)
         {
             if(communicator::m_rx_queue[i] == nullptr)
             {
@@ -486,12 +486,12 @@ void communicator::tx(utility::outbound* message)
 {
     // Serialize the packet without escapes.
     // First, get total packet length = message length + 7 (1 header, 4 sequence, 1 receipt, 1 checksum)
-    unsigned int packet_size = message->p_message()->p_message_length() + 7;
+    uint32_t packet_size = message->p_message()->p_message_length() + 7;
     // Create packet.
-    unsigned char* packet = new unsigned char[packet_size];
+    uint8_t* packet = new uint8_t[packet_size];
     // Write the header, sequence, and receipt.
     packet[0] = communicator::m_header_byte;
-    unsigned int be_sequence = qToBigEndian<unsigned int>(message->p_sequence_number());
+    uint32_t be_sequence = qToBigEndian(message->p_sequence_number());
     std::memcpy(&packet[1], &be_sequence, 4);
     packet[5] = message->p_receipt_required();
     // Write the message bytes.
@@ -508,12 +508,12 @@ void communicator::tx(utility::outbound* message)
     // Delete the packet.
     delete [] packet;
 }
-void communicator::tx(unsigned char *buffer, unsigned int length)
+void communicator::tx(uint8_t *buffer, uint32_t length)
 {
     // Check if escapes are needed.
-    unsigned int n_escapes = 0;
+    uint32_t n_escapes = 0;
     // Only check after the header.
-    for(unsigned int i = 1; i < length; i++)
+    for(uint32_t i = 1; i < length; i++)
     {
         if(buffer[i] == communicator::m_header_byte || buffer[i] == communicator::m_escape_byte)
         {
@@ -525,12 +525,12 @@ void communicator::tx(unsigned char *buffer, unsigned int length)
     if(n_escapes > 0)
     {
         // Escapes needed.
-        unsigned char* esc_buffer = new unsigned char[length + n_escapes];
-        unsigned int esc_write_position = 0;
+        uint8_t* esc_buffer = new uint8_t[length + n_escapes];
+        uint32_t esc_write_position = 0;
         // Copy the header byte first since it should not be escaped.
         esc_buffer[esc_write_position++] = buffer[0];
         // Only check after the header.
-        for(unsigned int i = 1; i < length; i++)
+        for(uint32_t i = 1; i < length; i++)
         {
             if(buffer[i] == communicator::m_header_byte || buffer[i] == communicator::m_escape_byte)
             {
@@ -559,25 +559,25 @@ void communicator::tx(unsigned char *buffer, unsigned int length)
     // Since writing is asynchronous, wait for the bytes to begin writing.
     communicator::m_serial_port->waitForBytesWritten(-1);
 }
-bool communicator::rx(unsigned char* buffer, unsigned int length)
+bool communicator::rx(uint8_t* buffer, uint32_t length)
 {
     // Create global flag for unescaping the next byte, even across different read segments.
     bool unescape_next = false;
     // Block read until length bytes have been satisfied after escapements.
-    unsigned int current_length = 0;
+    uint32_t current_length = 0;
     while(current_length < length)
     {
         // Read in the remaining length into a temporary buffer.
-        unsigned int remaining_length = length - current_length;
-        unsigned char* temp_buffer = new unsigned char[remaining_length];
-        unsigned long n_read = communicator::serial_read(temp_buffer, remaining_length);
+        uint32_t remaining_length = length - current_length;
+        uint8_t* temp_buffer = new uint8_t[remaining_length];
+        uint64_t n_read = communicator::serial_read(temp_buffer, remaining_length);
         if(n_read < remaining_length)
         {
             // Quit due to timeout.
             return false;
         }
         // Read through the temporary buffer and extract bytes into the actual buffer.
-        for(unsigned int i = 0; i < remaining_length; i++)
+        for(uint32_t i = 0; i < remaining_length; i++)
         {
             if(temp_buffer[i] == communicator::m_escape_byte)
             {
@@ -588,7 +588,7 @@ bool communicator::rx(unsigned char* buffer, unsigned int length)
             {
                 // Copy byte.
                 // Unescaping is adding 1 to the value. Can use cast of unescape_next bool.
-                buffer[current_length++] = temp_buffer[i] + static_cast<unsigned char>(unescape_next);
+                buffer[current_length++] = temp_buffer[i] + static_cast<uint8_t>(unescape_next);
                 // Set unescape flag.
                 unescape_next = false;
             }
@@ -600,22 +600,22 @@ bool communicator::rx(unsigned char* buffer, unsigned int length)
     // If this point is reached, current_length = length.
     return true;
 }
-unsigned char communicator::checksum(unsigned char* data, unsigned int length)
+uint8_t communicator::checksum(uint8_t* data, uint32_t length)
 {
-    unsigned char checksum = 0;
-    for(unsigned int i = 0 ; i < length; i++)
+    uint8_t checksum = 0;
+    for(uint32_t i = 0 ; i < length; i++)
     {
         checksum ^= data[i];
     }
     return checksum;
 }
-unsigned long communicator::serial_read(unsigned char *buffer, unsigned int length, unsigned int timeout_ms)
+uint64_t communicator::serial_read(uint8_t *buffer, uint32_t length, uint32_t timeout_ms)
 {
     // Wait until number of bytes requested is available or timeout occurs.
     // Grab starting timestamp.
-    unsigned long start_time = QDateTime::currentMSecsSinceEpoch();
+    uint64_t start_time = QDateTime::currentMSecsSinceEpoch();
     // Initialize bytes_available.
-    unsigned long bytes_available = communicator::m_serial_port->bytesAvailable();
+    uint64_t bytes_available = communicator::m_serial_port->bytesAvailable();
     // Wait while checking timeout.
     while(bytes_available < length)
     {
@@ -635,5 +635,5 @@ unsigned long communicator::serial_read(unsigned char *buffer, unsigned int leng
 
     // If this point is reached, either enough bytes are available or timeout has occured.
     // Read the smaller of length or bytes_available and return bytes read.
-    return communicator::m_serial_port->read((char*)(buffer), qMin(static_cast<unsigned long>(length), bytes_available));
+    return communicator::m_serial_port->read((char*)(buffer), qMin(static_cast<uint64_t>(length), bytes_available));
 }
