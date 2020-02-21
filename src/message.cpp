@@ -82,7 +82,7 @@ void message::set_field(uint16_t address, uint32_t size, void *data)
     }
     case 8:
     {
-        uint64_t value = qToBigEndian(*static_cast<uint64_t*>(data));
+        uint64_t value = qToBigEndian(*static_cast<quint64*>(data));
         std::memcpy(&message::m_data[address], & value, 8);
         break;
     }
@@ -130,7 +130,7 @@ void message::get_field(uint16_t address, uint32_t size, void *data) const
     }
     case 8:
     {
-        uint64_t value = qFromBigEndian(*reinterpret_cast<uint64_t*>(&message::m_data[address]));
+        uint64_t value = qFromBigEndian(*reinterpret_cast<quint64*>(&message::m_data[address]));
         std::memcpy(data, &value, 8);
         break;
     }
