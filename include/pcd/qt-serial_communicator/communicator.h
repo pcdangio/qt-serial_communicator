@@ -9,6 +9,8 @@
 #include "utility/inbound.h"
 
 #include <QtSerialPort/QSerialPort>
+#include <QThread>
+#include <QMutex>
 
 ///
 /// \brief Includes all software for implementing the serial_communicator.
@@ -18,7 +20,10 @@ namespace serial_communicator {
 /// \brief A communicator for transmitting and receiving messages via serial.
 ///
 class communicator
+        : private QThread
 {
+    Q_OBJECT
+
 public:
     // CONSTRUCTORS
     ///
@@ -30,6 +35,16 @@ public:
     ~communicator();
 
     // METHODS
+    ///
+    /// \brief start Starts the communicator thread.
+    /// \return TRUE if the communicator was able to start, otherwise FALSE.
+    ///
+    bool start();
+    ///
+    /// \brief stop  Stops the communicator thread.
+    /// \return TRUE if the communicator was able to stop, otherwise FALSE.
+    ///
+    bool stop();
     ///
     /// \brief send Sends a message by adding it to the communicator's transmit queue.
     /// \param message The message to send. The communicator takes ownership of the pointer.
@@ -173,6 +188,12 @@ private:
     /// \brief m_sequence_counter Stores the current sequence number for assigning unique and monotonic sequence IDs to messages.
     ///
     uint32_t m_sequence_counter;
+
+    // THREADING
+    ///
+    /// \brief m_mutex Provides thread protection.
+    ///
+    QMutex m_mutex;
 
     // QUEUES
     ///

@@ -34,6 +34,9 @@ communicator::communicator(QSerialPort *serial_port)
 }
 communicator::~communicator()
 {
+    // Stop thread if it's running.
+    communicator::stop();
+
     // Clean up queues.
     for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
@@ -51,6 +54,33 @@ communicator::~communicator()
 }
 
 // PUBLIC METHODS
+bool communicator::start()
+{
+    // Check if thread is already running.
+    if(communicator::QThread::isRunning())
+    {
+        return false;
+    }
+
+    // Start thread.
+    communicator::QThread::start();
+
+    return true;
+}
+bool communicator::stop()
+{
+    // Check if thread is already running.
+    if(!communicator::QThread::isRunning())
+    {
+        return false;
+    }
+
+    // Interrupt the thread.
+    communicator::QThread::requestInterruption();
+    // Wait for it to join.
+    communicator::QThread::wait();
+    return true;
+}
 bool communicator::send(message* message, bool receipt_required, message_status* tracker)
 {
     // Find an open spot in the transmit queue.
