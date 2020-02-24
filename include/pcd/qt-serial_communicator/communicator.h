@@ -202,7 +202,7 @@ private:
     ///
     /// \brief m_mutex Provides thread protection.
     ///
-    QMutex m_mutex;
+    mutable QMutex m_mutex;
 
     // QUEUES
     ///
