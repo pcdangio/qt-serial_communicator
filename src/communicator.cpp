@@ -19,6 +19,7 @@ communicator::communicator(QSerialPort *serial_port)
     communicator::m_queue_size = 10;
     communicator::m_receipt_timeout = 100;
     communicator::m_max_transmissions = 5;
+    communicator::m_loop_rate = 50;
 
     // Initialize sequence counter.
     communicator::m_sequence_counter = 0;
@@ -242,6 +243,14 @@ uint8_t communicator::p_max_transmissions()
 void communicator::p_max_transmissions(uint8_t value)
 {
     communicator::m_max_transmissions = value;
+}
+double communicator::p_loop_rate()
+{
+    return communicator::m_loop_rate;
+}
+void communicator::p_loop_rate(double value)
+{
+    communicator::m_loop_rate = value;
 }
 
 // PRIVATE METHODS

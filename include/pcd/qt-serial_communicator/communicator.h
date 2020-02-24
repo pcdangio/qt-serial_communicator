@@ -141,6 +141,18 @@ public:
     /// \note The default value is 5 transmissions.
     ///
     void p_max_transmissions(uint8_t value);
+    ///
+    /// \brief p_loop_rate Gets the loop rate (Hz) of the communicator thread.
+    /// \return The loop rate in Hz.
+    /// \note The default value is 50Hz.
+    ///
+    double p_loop_rate();
+    ///
+    /// \brief p_loop_rate Sets the loop rate (Hz) of the communicator thread.
+    /// \param double value The new loop rate in Hz.
+    /// \note The default value is 50Hz.
+    ///
+    void p_loop_rate(double value);
 
 private:
     // ENUMERATIONS
@@ -178,6 +190,10 @@ private:
     /// \brief m_max_transmissions Stores the maximum amount of transmissions for one message.
     ///
     uint8_t m_max_transmissions;
+    ///
+    /// \brief m_loop_rate Stores the main thread loop rate in Hz.
+    ///
+    double m_loop_rate;
 
     // VARIABLES
     ///
