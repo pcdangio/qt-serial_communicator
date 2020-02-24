@@ -85,6 +85,9 @@ bool communicator::stop()
 }
 bool communicator::send(message* message, bool receipt_required, message_status* tracker)
 {
+    // Lock mutex.
+    communicator::m_mutex.lock();
+
     // Find an open spot in the transmit queue.
     for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
@@ -93,9 +96,13 @@ bool communicator::send(message* message, bool receipt_required, message_status*
             // Open space found. Add outbound message and increment sequence counter.
             communicator::m_tx_queue[i] = new utility::outbound(message, communicator::m_sequence_counter++, receipt_required, tracker);
             // Quit here.
+            communicator::m_mutex.unlock();
             return true;
         }
     }
+
+    // Unlock mutex.
+    communicator::m_mutex.unlock();
 
     // If this point reached, a spot was not found.
     delete message;
@@ -103,6 +110,9 @@ bool communicator::send(message* message, bool receipt_required, message_status*
 }
 uint16_t communicator::messages_available() const
 {
+    // Lock mutex.
+    communicator::m_mutex.lock();
+
     // Count and return total number of messages in receive queue.
     uint16_t n_messages = 0;
     for(uint16_t i = 0; i < communicator::m_queue_size; i++)
@@ -112,6 +122,10 @@ uint16_t communicator::messages_available() const
             n_messages++;
         }
     }
+
+    // Unlock mutex.
+    communicator::m_mutex.unlock();
+
     return n_messages;
 }
 message* communicator::receive(uint16_t id)
@@ -119,6 +133,9 @@ message* communicator::receive(uint16_t id)
     // Find a message with the matching ID that has the highest priority, followed by oldest age.
     utility::inbound* to_read = nullptr;
     uint16_t location = 0;
+
+    // Lock mutex.
+    communicator::m_mutex.lock();
 
     for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
@@ -178,6 +195,9 @@ message* communicator::receive(uint16_t id)
     delete communicator::m_rx_queue[location];
     communicator::m_rx_queue[location] = nullptr;
 
+    // Unlock mutex.
+    communicator::m_mutex.unlock();
+
     // Return the read message.
     return output;
 }
@@ -193,6 +213,8 @@ void communicator::p_queue_size(uint16_t value)
     if(value != communicator::m_queue_size)
     {
         // Resize the queues.
+        // Lock mutex.
+        communicator::m_mutex.lock();
         // Create new queues.
         utility::outbound** new_tx = new utility::outbound*[value];
         utility::inbound** new_rx = new utility::inbound*[value];
@@ -219,6 +241,9 @@ void communicator::p_queue_size(uint16_t value)
 
         // Update the queue size variable.
         communicator::m_queue_size = value;
+
+        // Unlock mutex.
+        communicator::m_mutex.unlock();
     }
 }
 uint32_t communicator::p_receipt_timeout()
@@ -227,7 +252,9 @@ uint32_t communicator::p_receipt_timeout()
 }
 void communicator::p_receipt_timeout(uint32_t value)
 {
+    communicator::m_mutex.lock();
     communicator::m_receipt_timeout = value;
+    communicator::m_mutex.unlock();
 }
 uint8_t communicator::p_max_transmissions()
 {
@@ -235,7 +262,9 @@ uint8_t communicator::p_max_transmissions()
 }
 void communicator::p_max_transmissions(uint8_t value)
 {
+    communicator::m_mutex.lock();
     communicator::m_max_transmissions = value;
+    communicator::m_mutex.unlock();
 }
 double communicator::p_loop_rate()
 {
@@ -243,7 +272,9 @@ double communicator::p_loop_rate()
 }
 void communicator::p_loop_rate(double value)
 {
+    communicator::m_mutex.lock();
     communicator::m_loop_rate = value;
+    communicator::m_mutex.unlock();
 }
 
 // PRIVATE METHODS
@@ -273,6 +304,9 @@ void communicator::run()
 void communicator::spin_tx()
 {
     // Send the message with the highest priority or age.
+
+    // Lock mutex.
+    communicator::m_mutex.lock();
 
     // First, find the message with the highest priority or age.
     utility::outbound* to_send = nullptr;
@@ -371,6 +405,9 @@ void communicator::spin_tx()
             communicator::m_tx_queue[location] = nullptr;
         }
     }
+
+    // Unlock mutex.
+    communicator::m_mutex.unlock();
 }
 void communicator::spin_rx()
 {
@@ -415,6 +452,9 @@ void communicator::spin_rx()
     }
 
     // If this point is reached, a full packet has been read.
+
+    // Lock mutex before working on queues.
+    communicator::m_mutex.lock();
 
     // Validate the checksum.
     bool checksum_ok = packet[packet_length-1] == communicator::checksum(packet, packet_length-1);
@@ -533,6 +573,9 @@ void communicator::spin_rx()
             }
         }
     }
+
+    // Unlock the mutex now that queue work is done.
+    communicator::m_mutex.unlock();
 
     // Delete the packet.
     delete [] packet;
