@@ -70,13 +70,6 @@ public:
     /// \details Messages are always returned by highest priority, followed by oldest in age.
     ///
     message* receive(uint16_t id = 0xFFFF);
-    ///
-    /// \brief spin Performs a single spin of the communicator's internal duties.
-    /// \note This should be called at a constant rate within the main loop of external code.
-    /// \details A single spin operation will only attempt to send and received one message. This is to prevent the spin
-    /// method from severely blocking the main loop of the external code.
-    ///
-    void spin();
 
     // PROPERTIES
     ///
@@ -222,6 +215,10 @@ private:
     utility::inbound** m_rx_queue;
 
     // METHODS
+    ///
+    /// \brief run Implements the thread's main loop.
+    ///
+    void run() override;
     ///
     /// \brief spin_tx Conducts the transmit duties during a spin cycle.
     ///

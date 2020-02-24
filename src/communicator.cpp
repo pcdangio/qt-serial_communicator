@@ -4,6 +4,7 @@
 #include <QThread>
 #include <QCoreApplication>
 #include <QtEndian>
+#include <QDeadlineTimer>
 #include <cstring>
 
 using namespace serial_communicator;
@@ -180,14 +181,6 @@ message* communicator::receive(uint16_t id)
     // Return the read message.
     return output;
 }
-void communicator::spin()
-{
-    // First send messages.
-    communicator::spin_tx();
-
-    // Next, receive messages.
-    communicator::spin_rx();
-}
 
 // PUBLIC PROPERTIES
 uint16_t communicator::p_queue_size()
@@ -254,6 +247,29 @@ void communicator::p_loop_rate(double value)
 }
 
 // PRIVATE METHODS
+void communicator::run()
+{
+    while(!communicator::QThread::isInterruptionRequested())
+    {
+        // Kick off the loop timer.
+        QDeadlineTimer loop_timer(qRound(1000.0/communicator::m_loop_rate), Qt::PreciseTimer);
+
+        // Spin tx.
+        communicator::spin_tx();
+
+        // Process events on this thread to send/receive data.
+        QCoreApplication::processEvents();
+
+        // Spin rx.
+        communicator::spin_rx();
+
+        // Wait until loop time expires.
+        while(!loop_timer.hasExpired())
+        {
+            QThread::msleep(1);
+        }
+    }
+}
 void communicator::spin_tx()
 {
     // Send the message with the highest priority or age.
