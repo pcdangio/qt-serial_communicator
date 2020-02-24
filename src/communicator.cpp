@@ -361,6 +361,7 @@ void communicator::spin_tx()
     // Check that a message was actually found to send.
     if(to_send == nullptr)
     {
+        communicator::m_mutex.unlock();
         return;
     }
 
