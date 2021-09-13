@@ -9,6 +9,7 @@
 #include "utility/inbound.h"
 
 #include <QObject>
+#include <QTimer>
 #include <QtSerialPort/QSerialPort>
 
 ///
@@ -176,6 +177,10 @@ private:
     /// \brief m_sequence_counter Stores the current sequence number for assigning unique and monotonic sequence IDs to messages.
     ///
     uint32_t m_sequence_counter;
+    ///
+    /// \brief m_timer The background timer for spinning send events.
+    ///
+    QTimer* m_timer;
 
     // QUEUES
     ///
@@ -233,6 +238,10 @@ private:
 
 private slots:
     // SLOTS
+    ///
+    /// \brief timer Handles the timer signal.
+    ///
+    void timer();
     ///
     /// \brief data_ready Handles the serial port's readyread signal.
     ///

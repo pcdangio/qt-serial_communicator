@@ -16,6 +16,11 @@ communicator::communicator(QSerialPort *serial_port)
     communicator::m_serial_port->flush();
     communicator::connect(communicator::m_serial_port, &QSerialPort::readyRead, this, &communicator::data_ready);
 
+    // Set up the tx spin timer.
+    communicator::m_timer = new QTimer();
+    communicator::m_timer->setInterval(20);
+    communicator::m_timer->start();
+
     // Initialize parameters to default values.
     communicator::m_queue_size = 10;
     communicator::m_receipt_timeout = 100;
@@ -35,6 +40,10 @@ communicator::communicator(QSerialPort *serial_port)
 }
 communicator::~communicator()
 {
+    // Stop tx spin timer.
+    communicator::m_timer->stop();
+    delete communicator::m_timer;
+
     // Clean up queues.
     for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
@@ -640,6 +649,10 @@ uint64_t communicator::serial_read(uint8_t *buffer, uint32_t length, uint32_t ti
 }
 
 // PRIVATE SLOTS
+void communicator::timer()
+{
+
+}
 void communicator::data_ready()
 {
 
