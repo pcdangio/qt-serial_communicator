@@ -8,6 +8,7 @@
 #include "utility/outbound.h"
 #include "utility/inbound.h"
 
+#include <QObject>
 #include <QtSerialPort/QSerialPort>
 
 ///
@@ -18,7 +19,9 @@ namespace serial_communicator {
 /// \brief A communicator for transmitting and receiving messages via serial.
 ///
 class communicator
+    : public QObject
 {
+    Q_OBJECT
 public:
     // CONSTRUCTORS
     ///
@@ -227,6 +230,14 @@ private:
     /// \return The number of bytes actually read into the buffer.
     ///
     uint64_t serial_read(uint8_t* buffer, uint32_t length, uint32_t timeout_ms = 30);
+
+private slots:
+    // SLOTS
+    ///
+    /// \brief data_ready Handles the serial port's readyread signal.
+    ///
+    void data_ready();
+
 };
 }
 

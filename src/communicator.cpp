@@ -14,6 +14,7 @@ communicator::communicator(QSerialPort *serial_port)
     // Set up the serial port.
     communicator::m_serial_port = serial_port;
     communicator::m_serial_port->flush();
+    communicator::connect(communicator::m_serial_port, &QSerialPort::readyRead, this, &communicator::data_ready);
 
     // Initialize parameters to default values.
     communicator::m_queue_size = 10;
@@ -636,4 +637,10 @@ uint64_t communicator::serial_read(uint8_t *buffer, uint32_t length, uint32_t ti
     // If this point is reached, either enough bytes are available or timeout has occured.
     // Read the smaller of length or bytes_available and return bytes read.
     return communicator::m_serial_port->read((char*)(buffer), qMin(static_cast<uint64_t>(length), bytes_available));
+}
+
+// PRIVATE SLOTS
+void communicator::data_ready()
+{
+
 }
