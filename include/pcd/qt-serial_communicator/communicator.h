@@ -8,7 +8,11 @@
 #include "utility/outbound.h"
 #include "utility/inbound.h"
 
+#include <QObject>
+#include <QTimer>
 #include <QtSerialPort/QSerialPort>
+
+#include <deque>
 
 ///
 /// \brief Includes all software for implementing the serial_communicator.
@@ -18,7 +22,9 @@ namespace serial_communicator {
 /// \brief A communicator for transmitting and receiving messages via serial.
 ///
 class communicator
+    : public QObject
 {
+    Q_OBJECT
 public:
     // CONSTRUCTORS
     ///
@@ -55,13 +61,6 @@ public:
     /// \details Messages are always returned by highest priority, followed by oldest in age.
     ///
     message* receive(uint16_t id = 0xFFFF);
-    ///
-    /// \brief spin Performs a single spin of the communicator's internal duties.
-    /// \note This should be called at a constant rate within the main loop of external code.
-    /// \details A single spin operation will only attempt to send and received one message. This is to prevent the spin
-    /// method from severely blocking the main loop of the external code.
-    ///
-    void spin();
 
     // PROPERTIES
     ///
@@ -173,6 +172,18 @@ private:
     /// \brief m_sequence_counter Stores the current sequence number for assigning unique and monotonic sequence IDs to messages.
     ///
     uint32_t m_sequence_counter;
+    ///
+    /// \brief m_timer The background timer for spinning send events.
+    ///
+    QTimer* m_timer;
+    ///
+    /// \brief m_serial_buffer Stores newly received bytes from the serial port.
+    ///
+    std::deque<uint8_t> m_serial_buffer;
+    ///
+    /// \brief m_escape_next Indicates if the next read byte is escaped.
+    ///
+    bool m_escape_next;
 
     // QUEUES
     ///
@@ -205,14 +216,6 @@ private:
     ///
     void tx(uint8_t* buffer, uint32_t length);
     ///
-    /// \brief rx Reads a specified amount of bytes from the serial buffer.
-    /// \param buffer The pre-allocated buffer to store read bytes in.
-    /// \param length The number of bytes to read.
-    /// \return TRUE if length bytes was read successfully, otherwise FALSE (a.k.a. timeout)
-    /// \details This method will read bytes from the buffer and correct for escape bytes.
-    ///
-    bool rx(uint8_t* buffer, uint32_t length);
-    ///
     /// \brief checksum Calculates the XOR checksum of the provided data array.
     /// \param data The data to calculate the checksum for.
     /// \param length The length of the data array.
@@ -227,6 +230,18 @@ private:
     /// \return The number of bytes actually read into the buffer.
     ///
     uint64_t serial_read(uint8_t* buffer, uint32_t length, uint32_t timeout_ms = 30);
+
+private slots:
+    // SLOTS
+    ///
+    /// \brief timer Handles the timer signal.
+    ///
+    void timer();
+    ///
+    /// \brief data_ready Handles the serial port's readyread signal.
+    ///
+    void data_ready();
+
 };
 }
 

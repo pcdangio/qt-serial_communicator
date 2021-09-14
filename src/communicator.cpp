@@ -14,6 +14,14 @@ communicator::communicator(QSerialPort *serial_port)
     // Set up the serial port.
     communicator::m_serial_port = serial_port;
     communicator::m_serial_port->flush();
+    communicator::connect(communicator::m_serial_port, &QSerialPort::readyRead, this, &communicator::data_ready);
+    communicator::m_escape_next = false;
+
+    // Set up the spin timer.
+    communicator::m_timer = new QTimer();
+    communicator::connect(communicator::m_timer, &QTimer::timeout, this, &communicator::timer);
+    communicator::m_timer->setInterval(20);
+    communicator::m_timer->start();
 
     // Initialize parameters to default values.
     communicator::m_queue_size = 10;
@@ -34,6 +42,10 @@ communicator::communicator(QSerialPort *serial_port)
 }
 communicator::~communicator()
 {
+    // Stop tx spin timer.
+    communicator::m_timer->stop();
+    delete communicator::m_timer;
+
     // Clean up queues.
     for(uint16_t i = 0; i < communicator::m_queue_size; i++)
     {
@@ -148,14 +160,6 @@ message* communicator::receive(uint16_t id)
 
     // Return the read message.
     return output;
-}
-void communicator::spin()
-{
-    // First send messages.
-    communicator::spin_tx();
-
-    // Next, receive messages.
-    communicator::spin_rx();
 }
 
 // PUBLIC PROPERTIES
@@ -319,44 +323,61 @@ void communicator::spin_tx()
 }
 void communicator::spin_rx()
 {
-    // Read bytes until header byte is found or timed out.
-    // Do this directly from the serial port since the header is not concerned with escape bytes.
-    uint8_t read_byte = 0;
-    while(read_byte != communicator::m_header_byte)
+    // Pop bytes until the header byte is found.
+    bool header_found = false;
+    while(!communicator::m_serial_buffer.empty() && header_found == false)
     {
-        uint64_t n_read = communicator::serial_read(&read_byte, 1);
-        if(n_read < 1)
+        if(communicator::m_serial_buffer.front() == communicator::m_header_byte)
         {
-            // Timeout has occured, quit.
-            return;
+            header_found = true;
+        }
+        else
+        {
+            communicator::m_serial_buffer.pop_front();
         }
     }
 
-    // If this point reached, a valid header has been found.
-    // Message data length is needed.  Read beginning of packet into temporary array to get to length.
-    // 1 header, 4 sequence, 1 receipt, 2 message id, 1 priority, 2 data length. Read next 10 bytes.
-    uint8_t packet_front[11];
-    packet_front[0] = read_byte;
-    // Use rx method for rest of reads to handle escape bytes.
-    if(communicator::rx(&packet_front[1], 10) == false)
+    // Check if header was found.
+    if(!header_found)
     {
-        // Timeout has occurred, quit.
+        // No valid header found, quit.
         return;
     }
 
-    // Extract the data length from the end of packet_front.
-    uint16_t data_length = qFromBigEndian(*reinterpret_cast<uint16_t*>(&packet_front[9]));
+    // Start packet size tracking.
+    // Initialize with 1 header, 4 sequence, 1 receipt, 2 message id, 1 priority, 2 data length.
+    uint32_t packet_length = 11;
 
-    // Form the final packet array.
-    uint32_t packet_length = 11 + data_length + 1;
-    uint8_t* packet = new uint8_t[packet_length];
-    // Copy the front of the packet into the final packet.
-    std::memcpy(packet, packet_front, 11);
-    // Read the remaining bytes into the packet.
-    if(communicator::rx(&packet[11], data_length + 1) == false)
+    // If this point reached, a valid header has been found.
+    // Message data length is needed.
+    if(communicator::m_serial_buffer.size() < packet_length)
     {
-        // Timeout has occurred, quit.
         return;
+    }
+    // Read bytes 9 and 10 to get the data length.
+    uint8_t data_length_bytes[2];
+    data_length_bytes[0] = communicator::m_serial_buffer[9];
+    data_length_bytes[1] = communicator::m_serial_buffer[10];
+
+    // Extract the data length from the end of packet_front.
+    uint16_t data_length = qFromBigEndian(*reinterpret_cast<uint16_t*>(&data_length_bytes));
+
+    // Finalize packet size with data length and checksum.
+    packet_length += data_length + 1;
+
+    // Check if packet length exists in the buffer.
+    if(communicator::m_serial_buffer.size() < packet_length)
+    {
+        return;
+    }
+
+    // Create packet array.
+    uint8_t* packet = new uint8_t[packet_length];
+    // Read packet from buffer.
+    for(uint32_t i = 0; i < packet_length; ++i)
+    {
+        packet[i] = communicator::m_serial_buffer.front();
+        communicator::m_serial_buffer.pop_front();
     }
 
     // If this point is reached, a full packet has been read.
@@ -508,7 +529,7 @@ void communicator::tx(utility::outbound* message)
     // Delete the packet.
     delete [] packet;
 }
-void communicator::tx(uint8_t *buffer, uint32_t length)
+void communicator::tx(uint8_t* buffer, uint32_t length)
 {
     // Check if escapes are needed.
     uint32_t n_escapes = 0;
@@ -559,47 +580,6 @@ void communicator::tx(uint8_t *buffer, uint32_t length)
     // Since writing is asynchronous, wait for the bytes to begin writing.
     communicator::m_serial_port->waitForBytesWritten(-1);
 }
-bool communicator::rx(uint8_t* buffer, uint32_t length)
-{
-    // Create global flag for unescaping the next byte, even across different read segments.
-    bool unescape_next = false;
-    // Block read until length bytes have been satisfied after escapements.
-    uint32_t current_length = 0;
-    while(current_length < length)
-    {
-        // Read in the remaining length into a temporary buffer.
-        uint32_t remaining_length = length - current_length;
-        uint8_t* temp_buffer = new uint8_t[remaining_length];
-        uint64_t n_read = communicator::serial_read(temp_buffer, remaining_length);
-        if(n_read < remaining_length)
-        {
-            // Quit due to timeout.
-            return false;
-        }
-        // Read through the temporary buffer and extract bytes into the actual buffer.
-        for(uint32_t i = 0; i < remaining_length; i++)
-        {
-            if(temp_buffer[i] == communicator::m_escape_byte)
-            {
-                // Mark the escape flag.
-                unescape_next = true;
-            }
-            else
-            {
-                // Copy byte.
-                // Unescaping is adding 1 to the value. Can use cast of unescape_next bool.
-                buffer[current_length++] = temp_buffer[i] + static_cast<uint8_t>(unescape_next);
-                // Set unescape flag.
-                unescape_next = false;
-            }
-        }
-
-        delete [] temp_buffer;
-    }
-
-    // If this point is reached, current_length = length.
-    return true;
-}
 uint8_t communicator::checksum(uint8_t* data, uint32_t length)
 {
     uint8_t checksum = 0;
@@ -636,4 +616,34 @@ uint64_t communicator::serial_read(uint8_t *buffer, uint32_t length, uint32_t ti
     // If this point is reached, either enough bytes are available or timeout has occured.
     // Read the smaller of length or bytes_available and return bytes read.
     return communicator::m_serial_port->read((char*)(buffer), qMin(static_cast<uint64_t>(length), bytes_available));
+}
+
+// PRIVATE SLOTS
+void communicator::timer()
+{
+    communicator::spin_tx();
+    communicator::spin_rx();
+}
+void communicator::data_ready()
+{
+    // Read the new data from the port.
+    QByteArray new_data = communicator::m_serial_port->readAll();
+
+    // Add to the internal buffer, handling escapes.
+    for(auto current_byte = new_data.cbegin(); current_byte != new_data.cend(); ++current_byte)
+    {
+        // Check for escape byte.
+        if(*current_byte == communicator::m_escape_byte)
+        {
+            // Mark next byte as escaped.
+            communicator::m_escape_next = true;
+        }
+        else
+        {
+            // Add byte to buffer with escape.
+            communicator::m_serial_buffer.push_back(*current_byte + static_cast<uint8_t>(communicator::m_escape_next));
+            // Mark next byte as not escaped.
+            communicator::m_escape_next = false;
+        }
+    }
 }
