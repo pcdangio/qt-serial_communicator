@@ -12,6 +12,8 @@
 #include <QTimer>
 #include <QtSerialPort/QSerialPort>
 
+#include <deque>
+
 ///
 /// \brief Includes all software for implementing the serial_communicator.
 ///
@@ -59,13 +61,6 @@ public:
     /// \details Messages are always returned by highest priority, followed by oldest in age.
     ///
     message* receive(uint16_t id = 0xFFFF);
-    ///
-    /// \brief spin Performs a single spin of the communicator's internal duties.
-    /// \note This should be called at a constant rate within the main loop of external code.
-    /// \details A single spin operation will only attempt to send and received one message. This is to prevent the spin
-    /// method from severely blocking the main loop of the external code.
-    ///
-    void spin();
 
     // PROPERTIES
     ///
@@ -220,14 +215,6 @@ private:
     /// \param length The length of the unescaped packet buffer.
     ///
     void tx(uint8_t* buffer, uint32_t length);
-    ///
-    /// \brief rx Reads a specified amount of bytes from the serial buffer.
-    /// \param buffer The pre-allocated buffer to store read bytes in.
-    /// \param length The number of bytes to read.
-    /// \return TRUE if length bytes was read successfully, otherwise FALSE (a.k.a. timeout)
-    /// \details This method will read bytes from the buffer and correct for escape bytes.
-    ///
-    bool rx(uint8_t* buffer, uint32_t length);
     ///
     /// \brief checksum Calculates the XOR checksum of the provided data array.
     /// \param data The data to calculate the checksum for.
