@@ -15,9 +15,11 @@ communicator::communicator(QSerialPort *serial_port)
     communicator::m_serial_port = serial_port;
     communicator::m_serial_port->flush();
     communicator::connect(communicator::m_serial_port, &QSerialPort::readyRead, this, &communicator::data_ready);
+    communicator::m_escape_next = false;
 
-    // Set up the tx spin timer.
+    // Set up the spin timer.
     communicator::m_timer = new QTimer();
+    communicator::connect(communicator::m_timer, &QTimer::timeout, this, &communicator::timer);
     communicator::m_timer->setInterval(20);
     communicator::m_timer->start();
 
@@ -655,5 +657,24 @@ void communicator::timer()
 }
 void communicator::data_ready()
 {
+    // Read the new data from the port.
+    QByteArray new_data = communicator::m_serial_port->readAll();
 
+    // Add to the internal buffer, handling escapes.
+    for(auto current_byte = new_data.cbegin(); current_byte != new_data.cend(); ++current_byte)
+    {
+        // Check for escape byte.
+        if(*current_byte == communicator::m_escape_byte)
+        {
+            // Mark next byte as escaped.
+            communicator::m_escape_next = true;
+        }
+        else
+        {
+            // Add byte to buffer with escape.
+            communicator::m_serial_buffer.push_back(*current_byte + static_cast<uint8_t>(communicator::m_escape_next));
+            // Mark next byte as not escaped.
+            communicator::m_escape_next = false;
+        }
+    }
 }

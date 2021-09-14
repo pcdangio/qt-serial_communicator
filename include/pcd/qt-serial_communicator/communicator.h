@@ -181,6 +181,14 @@ private:
     /// \brief m_timer The background timer for spinning send events.
     ///
     QTimer* m_timer;
+    ///
+    /// \brief m_serial_buffer Stores newly received bytes from the serial port.
+    ///
+    std::deque<uint8_t> m_serial_buffer;
+    ///
+    /// \brief m_escape_next Indicates if the next read byte is escaped.
+    ///
+    bool m_escape_next;
 
     // QUEUES
     ///
